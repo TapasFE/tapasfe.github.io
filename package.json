@@ -25,6 +25,9 @@
     },
     "validate-commit-msg": {
       "types": [
+        "new",
+        "edit",
+        "delete",
         "feat",
         "fix",
         "docs",
