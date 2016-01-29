@@ -1,0 +1,5 @@
+.copyright
+    - var date = new Date();
+    - var year = date.getFullYear();
+    - year = year == theme.startyear ? year : theme.startyear + ' - ' + year;
+    p © #{year} #[a(href=config.url)!= config.author], powered by #[a(href="https://hexo.io/")!="Hexo"] with theme #[a(href="https://github.com/pinggod/hexo-theme-apollo")!="apollo"].

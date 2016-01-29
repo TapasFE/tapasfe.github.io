@@ -1,0 +1,62 @@
+{
+  "name": "tapasfe.github.io",
+  "description": "Where the `FrontEnd Group of Tapas` to write something verbose.",
+  "version": "0.1.0",
+  "hexo": {
+    "version": "3.1.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TapasFE/tapasfe.github.io.git"
+  },
+  "keywords": [
+    "tapasfe",
+    "blog"
+  ],
+  "author": "tsingchao",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TapasFE/tapasfe.github.io.git/issues"
+  },
+  "homepage": "https://github.com/TapasFE/tapasfe.github.io.git#readme",
+  "config": {
+    "ghooks": {
+      "commit-msg": "node ./node_modules/.bin/validate-commit-msg"
+    },
+    "validate-commit-msg": {
+      "types": [
+        "feat",
+        "fix",
+        "docs",
+        "style",
+        "refactor",
+        "perf",
+        "test",
+        "chore",
+        "revert"
+      ],
+      "warnOnFail": false,
+      "maxSubjectLength": 100
+    }
+  },
+  "dependencies": {
+    "hexo": "^3.1.0",
+    "hexo-browsersync": "^0.2.0",
+    "hexo-deployer-git": "0.0.4",
+    "hexo-generator-archive": "^0.1.2",
+    "hexo-generator-category": "^0.1.2",
+    "hexo-generator-feed": "^1.0.3",
+    "hexo-generator-index": "^0.1.2",
+    "hexo-generator-sitemap": "^1.0.1",
+    "hexo-generator-tag": "^0.1.1",
+    "hexo-renderer-ejs": "^0.1.0",
+    "hexo-renderer-jade": "^0.1.0",
+    "hexo-renderer-marked": "^0.2.4",
+    "hexo-renderer-stylus": "^0.3.0",
+    "hexo-server": "^0.1.2"
+  },
+  "devDependencies": {
+    "ghooks": "^1.0.3",
+    "validate-commit-msg": "^1.1.1"
+  }
+}

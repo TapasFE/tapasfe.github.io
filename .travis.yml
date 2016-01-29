@@ -1,0 +1,26 @@
+language: node_js
+branches:
+  only:
+    - posts
+cache:
+  directories:
+    - node_modules
+notifications:
+  email: false
+node_js:
+  - '4'
+before_install:
+  - npm i -g npm@^2.0.0
+  - npm install -g hexo
+  - npm install
+install:
+  - hexo generate
+env:
+  global:
+    secure: siL2LQXoxLdErhrdmQ1ASynl2g4zhXWuqOhtsWC3j0psLjxDXYO8qRk0hIyprxarzBSRwLQF+zO2iym5J8OEqbBrSI/r8ebgKnXOb08lwiCVMtCuHmMn+dIIc5V9LQ3+FmDADfDouQAtcI7MMUdRZAqvTH0rau1IRIs9aRzF6+K5q9IqeXGojUofJGJpx8FHhXQC2uVcOetIW1Ie7MEapd6RTSQOk9gj7541ByenY+QK5VQZ8wj+DhDTMkpgc0vGqwBOFH7N+XHl16GnpEj2BRJzjdEHf0V/FOowleS9fI8ac6fpXKsb4bknsHzFgu/jNvM5NBRsA4f5Q/ffxQyLkqtxnNPTf8ZwXcIRD4BcpKITo60t8iF4w75501p3qEydUIRmxBI4Sz1M58c3SihUsslkqQ5GvNvvvSW2tT5fwnikFy8vSjIYpqdxt8NumcFh8ivyFck2zYl+zhB3GTEQtBrJURnrE3bx5uX8JhylRAswSg6MMqRHPB3puw1NktehFc/NHPiGMsbgyJWm6+Kdjy+wf8Uu94T66AAgsoXkFH0O8P45Hmu0I7NTdiIC9JtqKBAT/GAomXCnh4U1T0tL2M0mfD4P7f9vpe2N8J0g5daX1cefvPt+sudwGOI30N0KFwbB6i/8xhHspsPdstLu/i727KEiKVV3NtCtdliNCgM=
+before_script:
+  - git config --global user.name 'tsingchao'
+  - git config --global user.email 'qingchao.tan@gmail.com'
+  - sed -i'' "s~git@github.com:TapasFE/tapasfe.github.io.git~https://${GH_TOKEN}:x-oauth-basic@github.com/TapasFE/tapasfe.github.io.git~" _config.yml
+script:
+  - hexo deploy --silent
