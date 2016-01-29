@@ -2,12 +2,19 @@
 title: 对 React 生态圈进行单元测试的探索
 date: 2016-01-29 15:00:38
 tags: 
+  - Tech Salon
   - test
   - react
   - react-redux
   - karma
   - jest
 ---
+
+<p align="center">
+  <img style="border-radius: 4px; box-shadow: 1px 2px 4px #aaa;" src="http://images.dtcj.com/DTCJ/1454055712615/59d88e80-c661-11e5-a8af-23b8bf415c38.jpeg">
+</p>
+
+第一次 TapasFE Tech Salon 于北京时间 2016-01-29 11:00 如期举行。会议上 [leeching](https://github.com/leeching) 针对目前 `React` 生态圈进行单元测试的方法及存在的问题进行了分享，内容如下。
 
 ### 前端测试难点
 
