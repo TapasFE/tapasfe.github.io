@@ -1,0 +1,35 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> TapasTech 使用 Let's Encrypt 证书流程 · TFBoys' Playground</title><meta name="description" content="TapasTech 使用 Let's Encrypt 证书流程 - TapasFE"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="short icon" href="/favicon.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600" type="text/css"></head><body><header><a href="/" class="logo-link"><img src="/favicon.png"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">博客</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">归档</a></li><li class="nav-list-item"><a href="https://github.com/TapasFE" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><section class="container"><div class="post"><article class="post-block"><h1 class="post-title">TapasTech 使用 Let's Encrypt 证书流程</h1><div class="post-meta"><div class="post-time">2016年9月14日</div></div><div class="post-content"><p><a href="https://letsencrypt.org/" target="_blank" rel="external">Let’s Encrypt</a> 的强大之处就不多说了。由于种种原因，我们决定迁移到 Let’s Encrypt 证书，而且其可以一次性包含多个域名，非常方便。</p>
+<h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><ol>
+<li><p>请自行补充 HTTPS 相关知识。</p>
+</li>
+<li><p>Let’s Encrypt 证书的签发是免费的，但是需要通过网络来认证服务器的身份，所以签发过程有两个必要条件：</p>
+<ol>
+<li>服务器可以连接到 Let’s Encrypt ；</li>
+<li>Let’s Encrypt 可以连接到我们的服务器。</li>
+</ol>
+<p>因此，证书的签发过程必须在一台拥有公网 IP 的服务器上，也就是有对外的 NginX 的服务器上，而且最终我们的证书文件也是要让 NginX 直接访问的。</p>
+</li>
+<li><p>偷懒是程序员的美德，这里使用<a href="https://github.com/gera2ld/scripts/tree/master/letsencrypt" target="_blank" rel="external">我的脚本集</a>，clone 下来就好了。</p>
+</li>
+</ol>
+<h2 id="签发证书"><a href="#签发证书" class="headerlink" title="签发证书"></a>签发证书</h2><ol>
+<li>（仅一次）运行脚本1，生成账号密钥。</li>
+<li>（仅一次）运行脚本2，下载<a href="https://github.com/diafygi/acme-tiny" target="_blank" rel="external">acme-tiny</a>脚本。</li>
+<li><p>（每次域名修改后）运行脚本3，生成 CSR（Certificate Signing Request）。</p>
+<p>域名的修改已经抽出来放到 <code>/root/letsencrypt/domains.txt</code> 了。</p>
+</li>
+<li><p>配置 NginX 的 HTTP 部分，以达到如下目的：</p>
+<ol>
+<li>提供 <code>challenges</code> 文件夹静态服务，用于 Let’s Encrypt 签发证书时验证身份。</li>
+<li>自动将 HTTP 请求跳转到相应的 HTTPS 地址访问。</li>
+</ol>
+<p>具体配置如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">server &#123;</div><div class="line">    listen 80;</div><div class="line">    server_name a.dtcj.com b.dtcj.com c.dtcj.com;</div><div class="line"></div><div class="line">    location /.well-known/acme-challenge/ &#123;</div><div class="line">        alias /absolute/path/to/challenges/;</div><div class="line">        try_files $uri =404;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    location / &#123;</div><div class="line">        return 301 https://$host$request_uri;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>（定期）运行脚本4，到 Let’s Encrypt 签发证书。</p>
+<p>值得注意的是，证书有效期为 90 天，所以需要定期刷新证书，重复执行此脚本即可。一个比较好的方法是将此脚本加入 crontab ：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">0 0 1 * * /absolute/path/to/4.cert.sh &gt;/dev/null 2&gt;&amp;1</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>至此，证书签发成功，再配置 NginX 的 HTTPS 部分如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line">server &#123;</div><div class="line">    listen       443 ssl;</div><div class="line">    server_name  a.dtcj.com b.dtcj.com c.dtcj.com;</div><div class="line"></div><div class="line">    ssl_certificate      /absolute/path/to/chained.pem;</div><div class="line">    ssl_certificate_key  /absolute/path/to/domain.key;</div><div class="line"></div><div class="line">    ssl_session_cache shared:SSL:1m;</div><div class="line">    ssl_session_timeout  5m;</div><div class="line"></div><div class="line">    ssl_ciphers  HIGH:!aNULL:!MD5;</div><div class="line">    ssl_prefer_server_ciphers   on;</div><div class="line"></div><div class="line">    location / &#123;</div><div class="line">        proxy_pass       http://localhost:3000;</div><div class="line">        proxy_set_header Host      $host;</div><div class="line">        proxy_set_header X-Real-IP $remote_addr;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    location /static/ &#123;</div><div class="line">        alias /absolute/path/to/static;</div><div class="line">        try_files $uri =404;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+</div></article></div></section><footer><div class="paginator"><a href="/2017/03/07/fe-notes/" class="prev">上一篇</a><a href="/2016/01/29/explore-the-unit-test-of-react-environment/" class="next">下一篇</a></div><div class="copyright"><p>© 2016 - 2017 <a href="http://tapasfe.github.io">TapasFE</a>, <a href="https://hexo.io/">Hexo</a> with <a href="https://github.com/pinggod/hexo-theme-apollo">apollo</a>.</p></div></footer><script src="https://cdn.bootcss.com/mathjax/2.5.3/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script></body></html>

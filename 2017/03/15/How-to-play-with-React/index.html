@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> React是怎么玩的？ · TFBoys' Playground</title><meta name="description" content="React是怎么玩的？ - TapasFE"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="short icon" href="/favicon.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600" type="text/css"></head><body><header><a href="/" class="logo-link"><img src="/favicon.png"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">博客</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">归档</a></li><li class="nav-list-item"><a href="https://github.com/TapasFE" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><section class="container"><div class="post"><article class="post-block"><h1 class="post-title">React是怎么玩的？</h1><div class="post-meta"><div class="post-time">2017年3月15日</div></div><div class="post-content"><p>React其实是一个特别简单的东西。简单到什么程度呢？简单到它自己几乎啥都做不了，一上项目就得动用React全家桶才能完成需求。</p>
+<h2 id="React"><a href="#React" class="headerlink" title="React"></a>React</h2><p>先说说裸的React：React本身就是一个单纯的View层，给它什么样的数据，它就渲染什么样的DOM。</p>
+<p>就这么简单。</p>
+<h2 id="数据放在哪"><a href="#数据放在哪" class="headerlink" title="数据放在哪"></a>数据放在哪</h2><p>React需要渲染数据，那么数据从哪里来呢？</p>
+<p>最直接的想法就是把数据存在要用的地方，比如存在组件内部的<code>state</code>。</p>
+<p>如果别的组件也要用怎么办？再存一份？从直觉上来讲，这显然是不妥的，但是问题似乎也不大。</p>
+<p>那么如果相同的数据渲染在了多个地方，如何让其他地方知道这里的数据变了？每次修改完数据如何同步到所有用到这块数据的地方？</p>
+<p>这就有了一个大坑，Redux就是用来填这个坑的。涉及服务端渲染的时候这个坑就更明显了。</p>
+<h2 id="Redux"><a href="#Redux" class="headerlink" title="Redux"></a>Redux</h2><p>再回过头来看React，React拿到什么样的数据，就渲染什么样的View，所以我们只要把所有的数据抽出来，然后多个组件共用一份数据，数据发生变化后让React自动渲染就好了。这样的话，不管是从哪个组件造成的数据变化，修改的都是同一份数据，于是所有用到这份数据的地方都会更新。这就是Redux里面的<code>store</code>，也就是一个全局的<code>state</code>。每个组件都可以通过<code>connect</code>与<code>store</code>中的数据关联起来，当数据发生变化的时候，自动触发<code>render</code>。</p>
+<p>同样的，造成数据修改的操作可能有很多，他们的结果可能是一样的，如果在每个组件内部都把业务逻辑写一遍，一方面过于麻烦，另一方面出错的可能性更大，而且不易抽象。所以我们希望把一个操作写成一个独立的方法，只要把数据传给它，它就能完成后续的复杂操作，如与服务器交互、获取数据。而我们只需要给它取个名字，就可以在各种场景下方便地使用。这就是Redux里的<code>action</code>。</p>
+<p>安全起见，我们始终不应该直接修改<code>state</code>，一方面这可能造成意料之外的数据破坏，另一方面无法快速得知数据发生了变化，所以通常要通过一个包装的方法来修改，这个方法始终返回一个新的对象作为新的<code>state</code>。这就是Redux里的<code>reducer</code>。</p>
+<p>总结一下，就是所有的数据都放在全局的<code>state</code>里（也就是<code>store</code>），所有的复杂操作都通过<code>action</code>来触发，所有的数据修改都通过<code>reducer</code>生成新的<code>state</code>完成。</p>
+<p><img src="/images/react-family.png" alt="react-family"></p>
+<p>Redux的思想也很简单，但是开发起来十分麻烦，因为针对一种数据，要分别定义每个操作的名字常量、每个操作的方法函数以及一堆处理数据的方法，而且分布在<code>constants</code>、<code>actions</code>、<code>reducers</code>三个地方，很不直观。dva就是用来填这个坑的。</p>
+<h2 id="dva"><a href="#dva" class="headerlink" title="dva"></a>dva</h2><p><a href="https://github.com/dvajs/dva" target="_blank" rel="external">dva</a>是阿里提供的一个库，把 React + redux + redux-saga + react-router 整合到了一起。一样的思想，更好的开发体验。</p>
+<p>dva中没有了<code>action</code>的概念，而多了<code>effect</code>，实际上与<code>action</code>类似，也是用来进行复杂操作，每一个<code>effect</code>里面既可以派发新的<code>effect</code>，也可以触发<code>reducer</code>进行数据更新，所有的名字都是用<code>namespace/name</code>的形式，相同的<code>namespace</code>下还可以直接简写为<code>name</code>，不需要再去写大量的冗余代码来定义常量了。</p>
+<p>除此之外，每一类数据可以写在一个<code>model</code>中，其<code>effect</code>和<code>reducer</code>写在一起，管理起来更方便，更有逻辑，代码更简洁。</p>
+<p>而且由于引入了<code>redux-saga</code>，所有的复杂操作都是用<code>generator</code>完成，可以用同步的方式写异步代码，可读性更好，而且方便测试（我没试过 - -!）。</p>
+<h2 id="延伸"><a href="#延伸" class="headerlink" title="延伸"></a>延伸</h2><ol>
+<li><p>什么情况下用React组件内的state？</p>
+<p>实际上很多情况下都应该避免，因为组件内的state需要自己维护，让组件变复杂，而且无法统一进行控制。因此只有在对一些独立的完全不受其他数据影响的地方可以适度使用，比如一个dropdown的开关。</p>
+</li>
+<li><p>数据应该在什么时机获取？</p>
+<p>最直观的方法显然是在<code>componentWillMount</code>或者<code>componentDidMount</code>之类的生命周期函数中发出获取数据的<code>action</code>，但是这样不利于服务端渲染，也会让组件变复杂，如果多处需要获取数据，可能要写一些重复代码。</p>
+<p>比较好的方法是监听路由变化的<code>action</code>，根据路由来判断用户是否有进入该路由的权限，再进行数据获取和组件渲染。</p>
+</li>
+</ol>
+</div></article></div></section><footer><div class="paginator"><a href="/2017/03/10/how-to-write-blog/" class="next">下一篇</a></div><div class="copyright"><p>© 2016 - 2017 <a href="http://tapasfe.github.io">TapasFE</a>, <a href="https://hexo.io/">Hexo</a> with <a href="https://github.com/pinggod/hexo-theme-apollo">apollo</a>.</p></div></footer><script src="https://cdn.bootcss.com/mathjax/2.5.3/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script></body></html>

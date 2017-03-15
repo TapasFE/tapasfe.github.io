@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>TFBoys&#39; Playground</title>
+  <subtitle>(T)apas (F)rontend (Boys&#39;) playground</subtitle>
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="http://tapasfe.github.io/"/>
+  <updated>2017-03-15T13:39:06.094Z</updated>
+  <id>http://tapasfe.github.io/</id>
+  
+  <author>
+    <name>TapasFE</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>React是怎么玩的？</title>
+    <link href="http://tapasfe.github.io/2017/03/15/How-to-play-with-React/"/>
+    <id>http://tapasfe.github.io/2017/03/15/How-to-play-with-React/</id>
+    <published>2017-03-15T20:10:37.000Z</published>
+    <updated>2017-03-15T13:39:06.094Z</updated>
+    
+    <content type="html"><![CDATA[<p>React其实是一个特别简单的东西。简单到什么程度呢？简单到它自己几乎啥都做不了，一上项目就得动用React全家桶才能完成需求。</p>
+<h2 id="React"><a href="#React" class="headerlink" title="React"></a>React</h2><p>先说说裸的React：React本身就是一个单纯的View层，给它什么样的数据，它就渲染什么样的DOM。</p>
+<p>就这么简单。</p>
+<h2 id="数据放在哪"><a href="#数据放在哪" class="headerlink" title="数据放在哪"></a>数据放在哪</h2><p>React需要渲染数据，那么数据从哪里来呢？</p>
+<p>最直接的想法就是把数据存在要用的地方，比如存在组件内部的<code>state</code>。</p>
+<p>如果别的组件也要用怎么办？再存一份？从直觉上来讲，这显然是不妥的，但是问题似乎也不大。</p>
+<p>那么如果相同的数据渲染在了多个地方，如何让其他地方知道这里的数据变了？每次修改完数据如何同步到所有用到这块数据的地方？</p>
+<p>这就有了一个大坑，Redux就是用来填这个坑的。涉及服务端渲染的时候这个坑就更明显了。</p>
+<h2 id="Redux"><a href="#Redux" class="headerlink" title="Redux"></a>Redux</h2><p>再回过头来看React，React拿到什么样的数据，就渲染什么样的View，所以我们只要把所有的数据抽出来，然后多个组件共用一份数据，数据发生变化后让React自动渲染就好了。这样的话，不管是从哪个组件造成的数据变化，修改的都是同一份数据，于是所有用到这份数据的地方都会更新。这就是Redux里面的<code>store</code>，也就是一个全局的<code>state</code>。每个组件都可以通过<code>connect</code>与<code>store</code>中的数据关联起来，当数据发生变化的时候，自动触发<code>render</code>。</p>
+<p>同样的，造成数据修改的操作可能有很多，他们的结果可能是一样的，如果在每个组件内部都把业务逻辑写一遍，一方面过于麻烦，另一方面出错的可能性更大，而且不易抽象。所以我们希望把一个操作写成一个独立的方法，只要把数据传给它，它就能完成后续的复杂操作，如与服务器交互、获取数据。而我们只需要给它取个名字，就可以在各种场景下方便地使用。这就是Redux里的<code>action</code>。</p>
+<p>安全起见，我们始终不应该直接修改<code>state</code>，一方面这可能造成意料之外的数据破坏，另一方面无法快速得知数据发生了变化，所以通常要通过一个包装的方法来修改，这个方法始终返回一个新的对象作为新的<code>state</code>。这就是Redux里的<code>reducer</code>。</p>
+<p>总结一下，就是所有的数据都放在全局的<code>state</code>里（也就是<code>store</code>），所有的复杂操作都通过<code>action</code>来触发，所有的数据修改都通过<code>reducer</code>生成新的<code>state</code>完成。</p>
+<p><img src="/images/react-family.png" alt="react-family"></p>
+<p>Redux的思想也很简单，但是开发起来十分麻烦，因为针对一种数据，要分别定义每个操作的名字常量、每个操作的方法函数以及一堆处理数据的方法，而且分布在<code>constants</code>、<code>actions</code>、<code>reducers</code>三个地方，很不直观。dva就是用来填这个坑的。</p>
+<h2 id="dva"><a href="#dva" class="headerlink" title="dva"></a>dva</h2><p><a href="https://github.com/dvajs/dva" target="_blank" rel="external">dva</a>是阿里提供的一个库，把 React + redux + redux-saga + react-router 整合到了一起。一样的思想，更好的开发体验。</p>
+<p>dva中没有了<code>action</code>的概念，而多了<code>effect</code>，实际上与<code>action</code>类似，也是用来进行复杂操作，每一个<code>effect</code>里面既可以派发新的<code>effect</code>，也可以触发<code>reducer</code>进行数据更新，所有的名字都是用<code>namespace/name</code>的形式，相同的<code>namespace</code>下还可以直接简写为<code>name</code>，不需要再去写大量的冗余代码来定义常量了。</p>
+<p>除此之外，每一类数据可以写在一个<code>model</code>中，其<code>effect</code>和<code>reducer</code>写在一起，管理起来更方便，更有逻辑，代码更简洁。</p>
+<p>而且由于引入了<code>redux-saga</code>，所有的复杂操作都是用<code>generator</code>完成，可以用同步的方式写异步代码，可读性更好，而且方便测试（我没试过 - -!）。</p>
+<h2 id="延伸"><a href="#延伸" class="headerlink" title="延伸"></a>延伸</h2><ol>
+<li><p>什么情况下用React组件内的state？</p>
+<p>实际上很多情况下都应该避免，因为组件内的state需要自己维护，让组件变复杂，而且无法统一进行控制。因此只有在对一些独立的完全不受其他数据影响的地方可以适度使用，比如一个dropdown的开关。</p>
+</li>
+<li><p>数据应该在什么时机获取？</p>
+<p>最直观的方法显然是在<code>componentWillMount</code>或者<code>componentDidMount</code>之类的生命周期函数中发出获取数据的<code>action</code>，但是这样不利于服务端渲染，也会让组件变复杂，如果多处需要获取数据，可能要写一些重复代码。</p>
+<p>比较好的方法是监听路由变化的<code>action</code>，根据路由来判断用户是否有进入该路由的权限，再进行数据获取和组件渲染。</p>
+</li>
+</ol>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;React其实是一个特别简单的东西。简单到什么程度呢？简单到它自己几乎啥都做不了，一上项目就得动用React全家桶才能完成需求。&lt;/p&gt;
+&lt;h2 id=&quot;React&quot;&gt;&lt;a href=&quot;#React&quot; class=&quot;headerlink&quot; title=&quot;React&quot;&gt;&lt;/a
+    
+    </summary>
+    
+    
+      <category term="react" scheme="http://tapasfe.github.io/tags/react/"/>
+    
+      <category term="redux" scheme="http://tapasfe.github.io/tags/redux/"/>
+    
+      <category term="dva" scheme="http://tapasfe.github.io/tags/dva/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>如何在本博客发布文章</title>
+    <link href="http://tapasfe.github.io/2017/03/10/how-to-write-blog/"/>
+    <id>http://tapasfe.github.io/2017/03/10/how-to-write-blog/</id>
+    <published>2017-03-10T14:21:10.000Z</published>
+    <updated>2017-03-15T13:39:06.094Z</updated>
+    
+    <content type="html"><![CDATA[<h3 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h3><ol>
+<li>从<a href="https://github.com/TapasFE/tapasfe.github.io" target="_blank" rel="external">TapasFE代码仓库</a>克隆到本地</li>
+<li><p>切换分支到 posts</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git checkout posts</div></pre></td></tr></table></figure>
+</li>
+<li><p>安装dependencies</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm i</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="本地开发"><a href="#本地开发" class="headerlink" title="本地开发"></a>本地开发</h3><ol>
+<li><p>全局安装Hexo命令行工具</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm i hexo-cli -g</div></pre></td></tr></table></figure>
+</li>
+<li><p>启动本地服务器</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm run dev</div></pre></td></tr></table></figure>
+<p>此时，可在localhost:4000查看博客网站</p>
+</li>
+</ol>
+<h3 id="编写新的博客"><a href="#编写新的博客" class="headerlink" title="编写新的博客"></a>编写新的博客</h3><ol>
+<li><p>创建博客</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm run new <span class="string">'my-blog-title'</span></div></pre></td></tr></table></figure>
+<p>Hexo会自动在<code>/source/_posts/</code>路径下创建名为’my-blog-title.md’的文件，并自动根据发布日期创建<code>/yyyy/mm/dd/my-blog-title/</code>的路由。</p>
+</li>
+<li>编写博客<br>编辑<code>/source/_posts/my-blog-title.md</code>文件，同时browserSync插件会自动把内容更新到浏览器上，便于即时查看修改。</li>
+</ol>
+<h3 id="发布博客"><a href="#发布博客" class="headerlink" title="发布博客"></a>发布博客</h3><ol>
+<li><p>打包静态资源</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm run build</div></pre></td></tr></table></figure>
+<p>静态资源打包后放在<code>/public</code>路径下</p>
+</li>
+<li><p>发布上线</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm run release</div></pre></td></tr></table></figure>
+<p>部署<code>/public</code>路径下的所有文件到远程</p>
+<p><strong><em>另：1、2两步也可以合并为以下命令，依次完成打包和上线</em></strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm run publish</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="删除已发布的博客"><a href="#删除已发布的博客" class="headerlink" title="删除已发布的博客"></a>删除已发布的博客</h3><ol>
+<li>删除本地Markdown文件</li>
+<li><p>清除打包过的带有待删除博客的静态文件</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm run clean</div></pre></td></tr></table></figure>
+</li>
+<li><p>重新打包上线</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm run publish</div></pre></td></tr></table></figure></li>
+</ol>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h3 id=&quot;初始化&quot;&gt;&lt;a href=&quot;#初始化&quot; class=&quot;headerlink&quot; title=&quot;初始化&quot;&gt;&lt;/a&gt;初始化&lt;/h3&gt;&lt;ol&gt;
+&lt;li&gt;从&lt;a href=&quot;https://github.com/TapasFE/tapasfe.github.io&quot; targ
+    
+    </summary>
+    
+    
+  </entry>
+  
+  <entry>
+    <title>前端开发大纲</title>
+    <link href="http://tapasfe.github.io/2017/03/07/fe-notes/"/>
+    <id>http://tapasfe.github.io/2017/03/07/fe-notes/</id>
+    <published>2017-03-07T11:32:00.000Z</published>
+    <updated>2017-03-15T13:39:06.094Z</updated>
+    
+    <content type="html"><![CDATA[<h3 id="项目结构"><a href="#项目结构" class="headerlink" title="项目结构"></a>项目结构</h3><p>为了更好地协作，项目结构最好统一起来。一般可以包括如下目录结构：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">▸ dist/          # 纯静态编译后的代码</div><div class="line">▸ lib/           # 服务端可直接运行的代码，或作为依赖存在的代码</div><div class="line">▸ scripts/       # 辅助用的脚本，比如编译、部署、配置管理</div><div class="line">▸ src/           # 需要编译的源码，如ES6，JSX</div><div class="line">  .editorconfig</div><div class="line">  .gitignore</div><div class="line">  config.yml     # 存放一些敏感的配置，与nconf配合使用（见后）</div><div class="line">  process.yml    # PM2启动服务端用的配置文件</div><div class="line">  README.md      # 介绍项目的基本信息，和常用的命令，方便其他协作者上手</div></pre></td></tr></table></figure>
+<p>注意事项：</p>
+<ul>
+<li>项目文件命名避免使用大写字母，最好使用全小写加连字符的形式，如<code>my-project</code>，以免在不同平台间出现问题。</li>
+<li><code>config.yml</code>中的信息敏感，一定要记得将<code>config.yml</code>加入<code>.gitignore</code>，或者直接使用环境变量替代。</li>
+</ul>
+<h3 id="自动化脚本"><a href="#自动化脚本" class="headerlink" title="自动化脚本"></a>自动化脚本</h3><p>每个项目最好都可以通过最简单的命令来完成一些常用操作，如：</p>
+<ul>
+<li><code>npm run dev</code>：一键开发</li>
+<li><code>npm run build</code>：一键编译</li>
+<li><code>npm run deploy</code>：一键部署</li>
+<li><code>npm start</code>：服务端项目一键启动</li>
+</ul>
+<p>然后通过<code>NODE_ENV</code>环境变量控制操作的类型，如：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># 编译用于测试环境</span></div><div class="line">$ npm run build</div><div class="line"></div><div class="line"><span class="comment"># 编译用于生产环境</span></div><div class="line">$ npm run build --production</div></pre></td></tr></table></figure>
+<p>一键部署到生产环境需要慎重使用，避免误操作，可以加入显眼的提示和延时等。</p>
+<h3 id="配置管理"><a href="#配置管理" class="headerlink" title="配置管理"></a>配置管理</h3><p>配置管理推荐使用<a href="https://github.com/indexzero/nconf" target="_blank" rel="external">nconf</a>，它是一个分层的配置管理工具，可以依次从每个层去查找相应的配置，轻松地实现配置的覆盖，而且支持<code>yaml</code>语法。</p>
+<p>举个栗子：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">const</span> nconf = <span class="built_in">require</span>(<span class="string">'nconf'</span>);</div><div class="line"></div><div class="line">nconf</div><div class="line"></div><div class="line"><span class="comment">// 如果需要强制覆盖一些配置，可以用overrides写到最前面一层</span></div><div class="line">.overrides(&#123;</div><div class="line">  <span class="attr">weather</span>: <span class="string">'sunny'</span>,</div><div class="line">&#125;)</div><div class="line"></div><div class="line"><span class="comment">// 从配置文件读取，如果文件不存在则忽略</span></div><div class="line">.file(&#123;</div><div class="line">  <span class="attr">file</span>: <span class="string">'config.yml'</span>,</div><div class="line">  <span class="attr">format</span>: <span class="built_in">require</span>(<span class="string">'nconf-yaml'</span>),    <span class="comment">// 如果不指定format则默认json</span></div><div class="line">&#125;)</div><div class="line"></div><div class="line"><span class="comment">// 从环境变量读取</span></div><div class="line">.env()</div><div class="line"></div><div class="line"><span class="comment">// 从运行时传进来的参数读取</span></div><div class="line">.argv()</div><div class="line"></div><div class="line"><span class="comment">// 默认配置</span></div><div class="line">.defaults(&#123;</div><div class="line">  <span class="attr">weather</span>: <span class="string">'cloudy'</span>,</div><div class="line">  <span class="attr">NODE_ENV</span>: <span class="string">'development'</span>,</div><div class="line">&#125;)</div><div class="line"></div><div class="line"><span class="comment">// 还可以强行修改当前的配置，优先级最高</span></div><div class="line">nconf.set(<span class="string">'weather'</span>, <span class="string">'rainy'</span>);</div><div class="line"></div><div class="line"><span class="comment">// 获取配置</span></div><div class="line"><span class="comment">// console.log(nconf.get('weather'));</span></div><div class="line"></div><div class="line"><span class="built_in">module</span>.exports = nconf;</div></pre></td></tr></table></figure>
+<p><code>nconf.get</code>会从每一层配置依次查找，返回第一个找到的结果。</p>
+<p>在上面的例子中，<code>NODE_ENV</code>被默认设置为<code>development</code>，如果在环境变量中设置<code>NODE_ENV=production</code>，则<code>nconf.get(&#39;NODE_ENV&#39;) === &#39;production&#39;</code>，因为<code>.env()</code>这一层在<code>.defaults({...})</code>这一层的前面，会先被找到。</p>
+<h3 id="Git的使用"><a href="#Git的使用" class="headerlink" title="Git的使用"></a>Git的使用</h3><ol>
+<li>控制好提交的粒度，<a href="http://www.ruanyifeng.com/blog/2016/01/commit_message_change_log.html" target="_blank" rel="external">写好提交信息</a>，方便回滚。</li>
+<li>打好标签（见后），方便回滚。</li>
+<li>合并分支前先确保更新到最新状态，避免旧代码覆盖掉新代码，同时避免一个开发分支跨越主分支上很多提交、甚至版本号，方便回滚。</li>
+<li>多人协作时，在不同分支上进行开发，避免在一个分支上修改另一个分支里开发的内容造成冲突。</li>
+<li>分支命名最好让其他人一眼明白其用处，如<code>fix/awkward-bug</code>、<code>feature/awesome-feature</code>。</li>
+</ol>
+<h3 id="标签的使用"><a href="#标签的使用" class="headerlink" title="标签的使用"></a>标签的使用</h3><p>标签相当于一个不活跃的分支，其好处是一直存在，可以在需要的时候快速找到。</p>
+<p>我们应该在每次部署是都打一个标签，这样如果之后出了问题，要回滚到上一个版本，只需要找到上一个版本对应的标签就好了。打标签可以使用命令：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ npm version [ patch | minor | major | &lt;version_number&gt; ]</div></pre></td></tr></table></figure>
+<h3 id="服务端管理"><a href="#服务端管理" class="headerlink" title="服务端管理"></a>服务端管理</h3><ol>
+<li><p>纯静态项目</p>
+<p>纯静态项目最好的方案是部署到CDN上，但是有时候涉及缓存，或者是URL地址的原因，我们会在自己的服务器上来serve。最理想的方案是用nginx直接指向静态文件夹。</p>
+<ul>
+<li><p>生产环境：nginx直接serve静态文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">server &#123;</div><div class="line">  listen 4000;</div><div class="line">  server_name single.dog;</div><div class="line"></div><div class="line">  location / &#123;</div><div class="line">    root /home/hugo/web/single_dog;</div><div class="line"></div><div class="line">    # 如果是单页面应用还需加上</div><div class="line">    try_files $uri /index.html;</div><div class="line">    add_header Cache-Control no-cache;</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如果配置好后任何地址都出现500，则多半是nginx没有权限访问静态文件夹（可以通过查看日志明确），可以通过以下命令验证：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">$ sudo -u nginx <span class="built_in">stat</span> /home/hugo/web/single_dog</div><div class="line"><span class="comment"># 出错则说明没有权限</span></div></pre></td></tr></table></figure>
+<p>添加权限的时候，需要给目标目录及其所有上级目录都加上其他用户（Other）的执行权限（x）：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ sudo chmod o+x /home /home/hugo /home/hugo/web /home/hugo/web/single_dog</div></pre></td></tr></table></figure>
+</li>
+<li><p>测试环境：可以用nginx，也可以用<a href="https://github.com/gera2ld/spa-static" target="_blank" rel="external">spa-static</a></p>
+</li>
+</ul>
+</li>
+<li><p>Node.js服务项目</p>
+<p>项目通过<code>process.yml</code>配置好以后，直接用<a href="http://pm2.keymetrics.io/" target="_blank" rel="external">PM2</a>管理。</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># 启动项目</span></div><div class="line">$ pm2 start process.yml</div><div class="line"></div><div class="line"><span class="comment"># 重启项目</span></div><div class="line">$ pm2 restart process.yml</div><div class="line"></div><div class="line"><span class="comment"># 列出所有项目</span></div><div class="line">$ pm2 ls</div><div class="line"></div><div class="line"><span class="comment"># 查看日志</span></div><div class="line">$ pm2 logs &lt;id_or_name&gt;</div></pre></td></tr></table></figure>
+<p>注：启动项目后请一定查看日志或者项目状态，确定项目正常运行。</p>
+</li>
+</ol>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h3 id=&quot;项目结构&quot;&gt;&lt;a href=&quot;#项目结构&quot; class=&quot;headerlink&quot; title=&quot;项目结构&quot;&gt;&lt;/a&gt;项目结构&lt;/h3&gt;&lt;p&gt;为了更好地协作，项目结构最好统一起来。一般可以包括如下目录结构：&lt;/p&gt;
+&lt;figure class=&quot;highlight 
+    
+    </summary>
+    
+    
+      <category term="fe" scheme="http://tapasfe.github.io/tags/fe/"/>
+    
+      <category term="dev" scheme="http://tapasfe.github.io/tags/dev/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>TapasTech 使用 Let&#39;s Encrypt 证书流程</title>
+    <link href="http://tapasfe.github.io/2016/09/14/lets-encrypt/"/>
+    <id>http://tapasfe.github.io/2016/09/14/lets-encrypt/</id>
+    <published>2016-09-14T22:37:08.000Z</published>
+    <updated>2017-03-15T13:39:06.094Z</updated>
+    
+    <content type="html"><![CDATA[<p><a href="https://letsencrypt.org/" target="_blank" rel="external">Let’s Encrypt</a> 的强大之处就不多说了。由于种种原因，我们决定迁移到 Let’s Encrypt 证书，而且其可以一次性包含多个域名，非常方便。</p>
+<h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><ol>
+<li><p>请自行补充 HTTPS 相关知识。</p>
+</li>
+<li><p>Let’s Encrypt 证书的签发是免费的，但是需要通过网络来认证服务器的身份，所以签发过程有两个必要条件：</p>
+<ol>
+<li>服务器可以连接到 Let’s Encrypt ；</li>
+<li>Let’s Encrypt 可以连接到我们的服务器。</li>
+</ol>
+<p>因此，证书的签发过程必须在一台拥有公网 IP 的服务器上，也就是有对外的 NginX 的服务器上，而且最终我们的证书文件也是要让 NginX 直接访问的。</p>
+</li>
+<li><p>偷懒是程序员的美德，这里使用<a href="https://github.com/gera2ld/scripts/tree/master/letsencrypt" target="_blank" rel="external">我的脚本集</a>，clone 下来就好了。</p>
+</li>
+</ol>
+<h2 id="签发证书"><a href="#签发证书" class="headerlink" title="签发证书"></a>签发证书</h2><ol>
+<li>（仅一次）运行脚本1，生成账号密钥。</li>
+<li>（仅一次）运行脚本2，下载<a href="https://github.com/diafygi/acme-tiny" target="_blank" rel="external">acme-tiny</a>脚本。</li>
+<li><p>（每次域名修改后）运行脚本3，生成 CSR（Certificate Signing Request）。</p>
+<p>域名的修改已经抽出来放到 <code>/root/letsencrypt/domains.txt</code> 了。</p>
+</li>
+<li><p>配置 NginX 的 HTTP 部分，以达到如下目的：</p>
+<ol>
+<li>提供 <code>challenges</code> 文件夹静态服务，用于 Let’s Encrypt 签发证书时验证身份。</li>
+<li>自动将 HTTP 请求跳转到相应的 HTTPS 地址访问。</li>
+</ol>
+<p>具体配置如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">server &#123;</div><div class="line">    listen 80;</div><div class="line">    server_name a.dtcj.com b.dtcj.com c.dtcj.com;</div><div class="line"></div><div class="line">    location /.well-known/acme-challenge/ &#123;</div><div class="line">        alias /absolute/path/to/challenges/;</div><div class="line">        try_files $uri =404;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    location / &#123;</div><div class="line">        return 301 https://$host$request_uri;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>（定期）运行脚本4，到 Let’s Encrypt 签发证书。</p>
+<p>值得注意的是，证书有效期为 90 天，所以需要定期刷新证书，重复执行此脚本即可。一个比较好的方法是将此脚本加入 crontab ：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">0 0 1 * * /absolute/path/to/4.cert.sh &gt;/dev/null 2&gt;&amp;1</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>至此，证书签发成功，再配置 NginX 的 HTTPS 部分如下：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line">server &#123;</div><div class="line">    listen       443 ssl;</div><div class="line">    server_name  a.dtcj.com b.dtcj.com c.dtcj.com;</div><div class="line"></div><div class="line">    ssl_certificate      /absolute/path/to/chained.pem;</div><div class="line">    ssl_certificate_key  /absolute/path/to/domain.key;</div><div class="line"></div><div class="line">    ssl_session_cache shared:SSL:1m;</div><div class="line">    ssl_session_timeout  5m;</div><div class="line"></div><div class="line">    ssl_ciphers  HIGH:!aNULL:!MD5;</div><div class="line">    ssl_prefer_server_ciphers   on;</div><div class="line"></div><div class="line">    location / &#123;</div><div class="line">        proxy_pass       http://localhost:3000;</div><div class="line">        proxy_set_header Host      $host;</div><div class="line">        proxy_set_header X-Real-IP $remote_addr;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    location /static/ &#123;</div><div class="line">        alias /absolute/path/to/static;</div><div class="line">        try_files $uri =404;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;&lt;a href=&quot;https://letsencrypt.org/&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;Let’s Encrypt&lt;/a&gt; 的强大之处就不多说了。由于种种原因，我们决定迁移到 Let’s Encrypt 证书，而且其可以一次性包含
+    
+    </summary>
+    
+    
+      <category term="tech" scheme="http://tapasfe.github.io/tags/tech/"/>
+    
+      <category term="ssl" scheme="http://tapasfe.github.io/tags/ssl/"/>
+    
+      <category term="https" scheme="http://tapasfe.github.io/tags/https/"/>
+    
+      <category term="cert" scheme="http://tapasfe.github.io/tags/cert/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>对 React 生态圈进行单元测试的探索</title>
+    <link href="http://tapasfe.github.io/2016/01/29/explore-the-unit-test-of-react-environment/"/>
+    <id>http://tapasfe.github.io/2016/01/29/explore-the-unit-test-of-react-environment/</id>
+    <published>2016-01-29T15:00:38.000Z</published>
+    <updated>2017-03-15T13:39:06.094Z</updated>
+    
+    <content type="html"><![CDATA[<p align="center"><br>  <img style="border-radius: 4px; box-shadow: 1px 2px 4px #aaa;" src="http://images.dtcj.com/DTCJ/1454055712615/59d88e80-c661-11e5-a8af-23b8bf415c38.jpeg"><br></p>
+
+<p>第一次 TapasFE Tech Salon 于北京时间 2016-01-29 11:00 如期举行。会议上 <a href="https://github.com/leeching" target="_blank" rel="external">leeching</a> 针对目前 <code>React</code> 生态圈进行单元测试的方法及存在的问题进行了分享，内容如下。</p>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
+<li><a href="#前端单元测试难点和解决方案">前端单元测试难点和解决方案</a></li>
+<li><a href="#jasmine-vs-jest">jasmine VS jest</a></li>
+<li><a href="#测试的基础步骤">测试的基础步骤</a><ul>
+<li><a href="#准备组件">准备组件</a></li>
+<li><a href="#引入组件">引入组件</a></li>
+<li><a href="#mock数据">mock数据</a></li>
+<li><a href="#render组件">render组件</a></li>
+<li><a href="#执行测试用例">执行测试用例</a></li>
+<li><a href="#清理">清理</a></li>
+</ul>
+</li>
+<li><a href="#测试的基本内容">测试的基本内容</a></li>
+<li><a href="#mock">mock</a><ul>
+<li><a href="#第三方库">第三方库</a></li>
+<li><a href="#异步请求">异步请求</a></li>
+</ul>
+</li>
+<li><a href="#高阶组件的测试方案">高阶组件的测试方案</a><ul>
+<li><a href="#react-redux组件">react-redux组件</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="前端单元测试难点和解决方案"><a href="#前端单元测试难点和解决方案" class="headerlink" title="前端单元测试难点和解决方案"></a>前端单元测试难点和解决方案</h2><p>简单的说，前端代码测试的难点主要在于两方面。</p>
+<p>一是，代码模块化做得不够好。目前，主流的前端模块化方案有三种，分别是被nodeJS采用的CommonJS方案，es2015规范提出的<code>import</code>、<code>export</code>语法，和AMD方案。另外，目前react开发大多采用<code>webpack</code>+<code>babel</code>的建构方案，在这种建构方案的基础上，一般会倾向于采用es2015的模块化方案加上少量的<code>module.exports</code>、<code>exports</code>语法。</p>
+<p>相比在<code>jQuery</code>时代普遍采用闭包来实现作用域隔离，react的模块化方案显然更优。但是，前端代码长久以来的风格陋习还是比较严重。即使是使用模块化的开发开发，模块之间随意调用，模块的层级关系不够明确，增加了代码的耦合度。</p>
+<p>另外一个难点是，前端代码中存在大量的异步逻辑。前端代码中的异步主要有三种。一种是dom元素上的回调事件。二是ajax异步通信请求。三是es2015中原生支持的<code>Promise</code>语法。<code>jasmine</code>提供了<code>done</code>方法用于支持异步代码的测试，但是，只依赖于测试框架来解决异步代码的测试问题是不够的。</p>
+<p>对于react开发来说，在<code>ReactElement</code>上申明的事件回调实际上在虚拟dom中是同步运行的。所以在单元测试中，借助这个特性可以规避掉所有由回调事件产生的异步难题。至于剩余两种异步的解决思路是，尽可能将异步逻辑简化并集中一处。将这些异步逻辑通过mock的方式在单元测试中规避掉。具体的mock方案在下文。</p>
+<h2 id="jasmine-VS-jest"><a href="#jasmine-VS-jest" class="headerlink" title="jasmine VS jest"></a>jasmine VS jest</h2><p>jest是在jasmine的基础上开发的一套测试框架，在react的开源生态中使用比较广泛。但是，在实际使用中发现了一些问题：</p>
+<ul>
+<li>配置jest比较麻烦<ol>
+<li>babel-jest.js（es2015的预处理）</li>
+<li>package.json（jest的配置）</li>
+</ol>
+</li>
+<li>jest测试运行中的报错信息难以解读</li>
+<li>jest的单元测试中的console无法在terminal中显示，不方便调试</li>
+<li>jest会自动mock所有包，实际上，在测试react组件时，大部分包并不需要mock</li>
+</ul>
+<p>当然，jest也是有优点</p>
+<ul>
+<li><code>__tests__</code>、<code>__mocks__</code>的命名方案可以借鉴</li>
+<li>mock机制很好用</li>
+</ul>
+<p>通过探索，个人认为karma+jasmine组合方案的实用性要优于jest。<code>webpack</code>官方提供了<code>karma-webpack</code>插件，用于预处理es2015代码。可以使用<code>karma-sourcemap</code>插件生成sourcemap，方便调试。因为<code>karma-webpack</code>提供了配置<code>webpack</code>的可能性，jest的mock机制可以通过<code>webpack</code>的<code>resolve.modulesDirectories</code>api非常简单地模拟出来。以下是一个简单的例子，完成了对<code>react-redux</code>的简单mock。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// karma.conf.js</span></div><div class="line"><span class="keyword">const</span> path = <span class="built_in">require</span>(<span class="string">'path'</span>)</div><div class="line"><span class="built_in">module</span>.exports = <span class="function"><span class="keyword">function</span>(<span class="params">config</span>) </span>&#123;</div><div class="line">  config.set(&#123;</div><div class="line">    <span class="attr">basePath</span>: <span class="string">''</span>,</div><div class="line">    <span class="attr">frameworks</span>: [<span class="string">'jasmine'</span>],</div><div class="line">    <span class="attr">files</span>: [</div><div class="line">      <span class="string">'src/**/__tests__/**/*.spec.js'</span>,</div><div class="line">      <span class="string">'src/**/__tests__/*.spec.js'</span></div><div class="line">    ],</div><div class="line">    <span class="attr">exclude</span>: [</div><div class="line">    ],</div><div class="line">    <span class="attr">preprocessors</span>: &#123;</div><div class="line">      <span class="string">'src/**/__tests__/**/*.spec.js'</span>: [<span class="string">'webpack'</span>, <span class="string">'sourcemap'</span>],</div><div class="line">      <span class="string">'src/**/__tests__/*.spec.js'</span>: [<span class="string">'webpack'</span>, <span class="string">'sourcemap'</span>],</div><div class="line">    &#125;,</div><div class="line">    <span class="attr">webpack</span>: &#123;</div><div class="line">      <span class="attr">devtool</span>: <span class="string">'inline-source-map'</span>,</div><div class="line">      <span class="attr">resolve</span>: &#123;</div><div class="line">        <span class="attr">modulesDirectories</span>: [</div><div class="line">          path.resolve(<span class="string">'__mocks__'</span>),</div><div class="line">          path.resolve(<span class="string">'node_modules'</span>)</div><div class="line">        ],</div><div class="line">        <span class="attr">alias</span>: &#123;</div><div class="line">          <span class="string">'#'</span>: path.resolve(<span class="string">'src'</span>)</div><div class="line">        &#125;</div><div class="line">      &#125;,</div><div class="line">      <span class="attr">module</span>: &#123;</div><div class="line">        <span class="attr">loaders</span>: [</div><div class="line">          &#123;</div><div class="line">            <span class="attr">test</span>: <span class="regexp">/\.js$/</span>,</div><div class="line">            <span class="attr">loader</span>: <span class="string">'babel'</span>,</div><div class="line">            <span class="attr">include</span>: <span class="regexp">/src|__mocks__/</span>,</div><div class="line">            <span class="attr">query</span>: &#123;</div><div class="line">              <span class="attr">presets</span>: [<span class="string">'react'</span>, <span class="string">'es2015'</span>, <span class="string">'stage-0'</span>],</div><div class="line">            &#125;</div><div class="line">          &#125;,</div><div class="line">          &#123;</div><div class="line">            <span class="attr">test</span>: <span class="regexp">/\.less$/</span>,</div><div class="line">            <span class="attr">loader</span>: <span class="string">'style!css!less'</span></div><div class="line">          &#125;,</div><div class="line">          &#123;</div><div class="line">            <span class="attr">test</span>: <span class="regexp">/\.(png|jpg|gif)$/</span>,</div><div class="line">            <span class="attr">loader</span>: <span class="string">'url'</span>,</div><div class="line">            <span class="attr">query</span>: &#123;</div><div class="line">              <span class="attr">limit</span>: <span class="number">2048</span>,</div><div class="line">            &#125;</div><div class="line">          &#125;,</div><div class="line">        ]</div><div class="line">      &#125;</div><div class="line">    &#125;,</div><div class="line">    <span class="attr">webpackMiddleware</span>: &#123;</div><div class="line">      <span class="attr">noInfo</span>: <span class="literal">true</span></div><div class="line">    &#125;,</div><div class="line">    <span class="attr">reporters</span>: [<span class="string">'progress'</span>],</div><div class="line">    <span class="attr">port</span>: <span class="number">9876</span>,</div><div class="line">    <span class="attr">colors</span>: <span class="literal">true</span>,</div><div class="line">    <span class="attr">logLevel</span>: config.LOG_INFO,</div><div class="line">    <span class="attr">browsers</span>: [<span class="string">'Chrome'</span>],</div><div class="line">    <span class="attr">singleRun</span>: <span class="literal">true</span></div><div class="line">  &#125;)</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// __mocks__/react-redux.js</span></div><div class="line"><span class="keyword">import</span> &#123;</div><div class="line">  connect <span class="keyword">as</span> _connect,</div><div class="line">  Provider,</div><div class="line">&#125; <span class="keyword">from</span> <span class="string">'../node_modules/react-redux'</span>;</div><div class="line"></div><div class="line"><span class="keyword">const</span> connect = <span class="function"><span class="keyword">function</span> (<span class="params">mapStateToProps, mapDispatchToProps, mergeProps, options = &#123;&#125;</span>) </span>&#123;</div><div class="line">  <span class="built_in">Object</span>.assign(options, &#123;<span class="attr">withRef</span>: <span class="literal">true</span>&#125;);</div><div class="line">  <span class="keyword">return</span> _connect(mapStateToProps, mapDispatchToProps, mergeProps, options);</div><div class="line">&#125;;</div><div class="line"></div><div class="line"><span class="built_in">module</span>.exports = &#123;</div><div class="line">  connect,</div><div class="line">  Provider,</div><div class="line">&#125;;</div></pre></td></tr></table></figure>
+<h2 id="测试的基础步骤"><a href="#测试的基础步骤" class="headerlink" title="测试的基础步骤"></a>测试的基础步骤</h2><h3 id="准备组件"><a href="#准备组件" class="headerlink" title="准备组件"></a>准备组件</h3><p>判断待测试的组件是否能够被测试。和外部模块耦合度过高的组件很难被测试。</p>
+<p>此外，还应该判断该组件是否有被测试的价值，逻辑过于简单和逻辑过于复杂的组件都没有测试的价值。前者可以在测试其父组件的同时顺便测一下，后者应该在模块内部划分成更小的组件以提高测试效率并降低测试难度。</p>
+<h3 id="引入组件"><a href="#引入组件" class="headerlink" title="引入组件"></a>引入组件</h3><p>采用jest的方案，在靠近组件的位置建立<code>__tests__</code>文件夹，在该文件夹下建立和组件的同名测试文件，并以<code>.spec.js</code>作为后缀名。在该文件中引入组件，以及和测试组件相关的模块，比如<code>reactDOM</code>、<code>react-addons-test-utils</code>等</p>
+<h3 id="mock数据"><a href="#mock数据" class="headerlink" title="mock数据"></a>mock数据</h3><p>mock数据主要有两部分，一是组件的props，二是异步函数。mock的工作主要在<code>beforeEach</code>这个钩子函数中进行。具体见示例。</p>
+<h3 id="render组件"><a href="#render组件" class="headerlink" title="render组件"></a>render组件</h3><p>调用<code>react-addons-test-utils</code>提供的<code>renderIntoDocument</code>api渲染待测试组件。一般测试中需要获取到这个组件渲染后的实例以及组件的真实dom。建议编写一个helper函数来简化这个常用操作。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// src/utils/testHelper.js</span></div><div class="line"><span class="keyword">import</span> &#123;renderIntoDocument&#125; <span class="keyword">from</span> <span class="string">'react-addons-test-utils'</span>;</div><div class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">renderComponent</span>(<span class="params">ReactElement</span>) </span>&#123;</div><div class="line">  <span class="keyword">const</span> instance = renderIntoDocument(</div><div class="line">    ReactElement</div><div class="line">  );</div><div class="line">  <span class="keyword">const</span> node = ReactDOM.findDOMNode(instance);</div><div class="line">  <span class="keyword">return</span> &#123;instance, node&#125;;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="执行测试用例"><a href="#执行测试用例" class="headerlink" title="执行测试用例"></a>执行测试用例</h3><p>根据需要编写测试用例，测试用例在jasmine中会按顺序运行。</p>
+<h3 id="清理"><a href="#清理" class="headerlink" title="清理"></a>清理</h3><p>jasmine提供了<code>afterEach</code>api，用于在执行完每个测试用例之后做清理工作。在测试react组件完毕或，会经常需要调用<code>ReactDOM.unmountComponentAtNode</code>api来卸载在<code>beforeEach</code>中渲染到dom的组件。如果测试用例中操作了<code>redux</code>的store状态，也应该在<code>afterEach</code>回调中将store的状态重置。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// src/components/Hello.js</span></div><div class="line"><span class="keyword">import</span> React <span class="keyword">from</span> <span class="string">'react'</span>;</div><div class="line"></div><div class="line"><span class="keyword">export</span> <span class="keyword">default</span> <span class="class"><span class="keyword">class</span> <span class="title">Hello</span> <span class="keyword">extends</span> <span class="title">React</span>.<span class="title">Component</span> </span>&#123;</div><div class="line">  <span class="keyword">constructor</span>() &#123;</div><div class="line">    <span class="keyword">super</span>();</div><div class="line">    <span class="keyword">this</span>.state = &#123;</div><div class="line">      <span class="attr">clicked</span>: <span class="literal">false</span></div><div class="line">    &#125;;</div><div class="line">  &#125;</div><div class="line">  clickHandler() &#123;</div><div class="line">    <span class="keyword">this</span>.setState(&#123;</div><div class="line">      <span class="attr">clicked</span>: !<span class="keyword">this</span>.state.clicked</div><div class="line">    &#125;);</div><div class="line">  &#125;</div><div class="line">  render() &#123;</div><div class="line">    <span class="keyword">return</span> (</div><div class="line">      &lt;div&gt;Hello, &#123;this.props.name&#125;&lt;/div&gt;</div><div class="line">    );</div><div class="line">  &#125;</div><div class="line">&#125;</div><div class="line"><span class="comment">// src/components/__tests__/Hello.spec.js</span></div><div class="line"><span class="keyword">import</span> React <span class="keyword">from</span> <span class="string">'react'</span>;</div><div class="line"><span class="keyword">import</span> ReactDOM <span class="keyword">from</span> <span class="string">'react-dom'</span>;</div><div class="line"><span class="keyword">import</span> &#123;Simulate&#125; <span class="keyword">from</span> <span class="string">'react-addons-test-utils'</span>;</div><div class="line"><span class="keyword">import</span> &#123;renderComponent&#125; <span class="keyword">from</span> <span class="string">'#/utils/testHelper'</span>;<span class="comment">// 见上文</span></div><div class="line"><span class="keyword">import</span> Hello <span class="keyword">from</span> <span class="string">'../Hello'</span>;</div><div class="line"></div><div class="line">describe(<span class="string">'Hello'</span>, () =&gt; &#123;</div><div class="line">  <span class="keyword">let</span> hello, name, mock;</div><div class="line">  beforeEach(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</div><div class="line">    name = <span class="string">'world'</span>;</div><div class="line">    hello = renderComponent(</div><div class="line">      &lt;Hello name=&#123;name&#125; /&gt;</div><div class="line">    );</div><div class="line">  &#125;);</div><div class="line">  afterEach(() =&gt; &#123;</div><div class="line">    ReactDOM.unmountComponentAtNode(hello.dom.parentNode);</div><div class="line">  &#125;);</div><div class="line">  it('should set initial state `clicked` false', () =&gt; &#123;</div><div class="line">    expect(hello.instance.state.clicked).toBeFalsy();</div><div class="line">  &#125;);</div><div class="line">  it('should render `name`', () =&gt; &#123;</div><div class="line">    expect(hello.node.textContent).toBe(`Hello, $&#123;name&#125;`);</div><div class="line">  &#125;);</div><div class="line">  it('should toggle state `clicked` when clicking the component', () =&gt; &#123;</div><div class="line">    Simulate.click(Hello);</div><div class="line">    expect(hello.instance.state.clicked).toBeTruthy();</div><div class="line">    Simulate.click(Hello);</div><div class="line">    expect(hello.instance.state.clicked).toBeFalsy();</div><div class="line">  &#125;);</div><div class="line">&#125;);</div></pre></td></tr></table></figure>
+<h2 id="测试的基本内容"><a href="#测试的基本内容" class="headerlink" title="测试的基本内容"></a>测试的基本内容</h2><p>测试的内容以具体项目需要做适当增减。一般来说，需要覆盖以下内容。</p>
+<ul>
+<li>各阶段的数据渲染是否准确</li>
+<li>各阶段的组件状态是否准确</li>
+<li>回调执行后的数据和状态变动是否符合预期</li>
+<li>api请求的地址，类型和发送数据是否符合预期</li>
+<li>helper函数的逻辑是否符合预期</li>
+</ul>
+<p>组件中有些部分是不需要测试的</p>
+<ul>
+<li>和组件状态无关的样式不测</li>
+<li>如果组件内部使用了外部库提供的组件，默认假定这些组件都会正常运行。只需要测试向这些组件提供的props数据是否准确，不需要测试这些组件的运行结果。</li>
+</ul>
+<h2 id="mock"><a href="#mock" class="headerlink" title="mock"></a>mock</h2><h3 id="第三方库"><a href="#第三方库" class="headerlink" title="第三方库"></a>第三方库</h3><p>使用像<code>react-router</code>之类的库会向组件传递<code>route</code>、<code>routeParams</code>之类的<code>props</code>。如果组件使用到了这些<code>props</code>，那么在单元测试时，渲染这些组件的时候，应该mock相应的<code>props</code>，并传给组件。</p>
+<h3 id="异步请求"><a href="#异步请求" class="headerlink" title="异步请求"></a>异步请求</h3><p>方便起见，将所有ajax请求都统称为<code>fetch</code>。</p>
+<p><code>fetch</code>是所有前端系统中都会被频繁调用的异步函数。为了方便在单元测试中做mock，建议根据项目的实际情况将<code>fetch</code>逻辑做简化抽象，并封装成一个统一的service。所有的异步请求都调用这个service。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// src/utils/fetch.js</span></div><div class="line"><span class="keyword">import</span> fetch <span class="keyword">from</span> <span class="string">'isomorphic-fetch'</span>;</div><div class="line"><span class="keyword">let</span> myFetch = fetch;</div><div class="line">exports.config = <span class="function"><span class="keyword">function</span> (<span class="params">fn</span>) </span>&#123;</div><div class="line">  myFetch = fn;</div><div class="line">&#125;;</div><div class="line">exports.fetch = <span class="function"><span class="keyword">function</span> (<span class="params">method, url, data</span>) </span>&#123;</div><div class="line">  <span class="keyword">let</span> config = &#123;</div><div class="line">    method,</div><div class="line">    <span class="attr">headers</span>: &#123;</div><div class="line">      <span class="string">'Accept'</span>: <span class="string">'application/json'</span>,</div><div class="line">      <span class="string">'Content-Type'</span>: <span class="string">'application/json'</span>,</div><div class="line">    &#125;,</div><div class="line">  &#125;;</div><div class="line">  <span class="keyword">if</span> (data)</div><div class="line">    <span class="built_in">Object</span>.assign(config, &#123;</div><div class="line">      <span class="attr">body</span>: <span class="built_in">JSON</span>.stringify(data)</div><div class="line">    &#125;);</div><div class="line">  <span class="keyword">return</span> myFetch(url, config).then(<span class="function"><span class="params">res</span> =&gt;</span> &#123;</div><div class="line">    <span class="keyword">return</span> res.json();</div><div class="line">  &#125;);</div><div class="line">&#125;;</div><div class="line"></div><div class="line"><span class="comment">// src/components/List.js</span></div><div class="line"><span class="keyword">import</span> React <span class="keyword">from</span> <span class="string">'react'</span>;</div><div class="line"><span class="keyword">import</span> &#123;fetch&#125; <span class="keyword">from</span> <span class="string">'#/utils/fetch'</span>;</div><div class="line"><span class="keyword">export</span> <span class="keyword">default</span> <span class="class"><span class="keyword">class</span> <span class="title">List</span> <span class="keyword">extends</span> <span class="title">React</span>.<span class="title">Component</span> </span>&#123;</div><div class="line">  componentDidMount() &#123;</div><div class="line">    fetch(<span class="string">'GET'</span>, <span class="string">'/api/list'</span>)</div><div class="line">    .then(<span class="function"><span class="params">data</span> =&gt;</span> &#123;</div><div class="line">      <span class="keyword">this</span>.setState(&#123;</div><div class="line">        <span class="attr">list</span>: data</div><div class="line">      &#125;);</div><div class="line">    &#125;);</div><div class="line">  &#125;</div><div class="line">  render() &#123;</div><div class="line">    <span class="keyword">return</span> (</div><div class="line">      &lt;ul&gt;</div><div class="line">        &#123;</div><div class="line">          this.state.list.map(item =&gt;</div><div class="line">            &lt;li&gt;&#123;item.name&#125;&lt;/li&gt;</div><div class="line">          )</div><div class="line">        &#125;</div><div class="line">      &lt;/ul&gt;</div><div class="line">    );</div><div class="line">  &#125;</div><div class="line">&#125;</div><div class="line"><span class="comment">// src/components/__tests__/List.spec.js</span></div><div class="line"><span class="keyword">import</span> ReactDOM <span class="keyword">from</span> <span class="string">'react-dom'</span>;</div><div class="line"><span class="keyword">import</span> &#123;Simulate&#125; <span class="keyword">from</span> <span class="string">'react-addons-test-utils'</span>;</div><div class="line"><span class="keyword">import</span> &#123;config&#125; <span class="keyword">from</span> <span class="string">'#/utils/fetch'</span>;</div><div class="line"><span class="keyword">import</span> &#123;renderComponent&#125; <span class="keyword">from</span> <span class="string">'#/utils/testHelper'</span>;<span class="comment">// 见上文</span></div><div class="line"><span class="keyword">import</span> List <span class="keyword">from</span> <span class="string">'../List'</span>;</div><div class="line"></div><div class="line">describe(<span class="string">'List'</span>, () =&gt; &#123;</div><div class="line">  <span class="keyword">let</span> list, name, mock;</div><div class="line">  beforeEach(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</div><div class="line">    name = <span class="string">'world'</span>;</div><div class="line">    mock = &#123;</div><div class="line">      <span class="attr">fetch</span>: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</div><div class="line">        <span class="keyword">return</span> <span class="built_in">Promise</span>.resolve();</div><div class="line">      &#125;</div><div class="line">    &#125;;</div><div class="line">    spyOn(mock, <span class="string">'fetch'</span>).and.callThrough();</div><div class="line">    list = renderComponent(</div><div class="line">      &lt;List /&gt;</div><div class="line">    );</div><div class="line">  &#125;);</div><div class="line">  afterEach(() =&gt; &#123;</div><div class="line">    ReactDOM.unmountComponentAtNode(list.dom.parentNode);</div><div class="line">  &#125;);</div><div class="line">  it('should launch a request', () =&gt; &#123;</div><div class="line">    expect(mock.fetch.calls.count()).toBe(1);</div><div class="line">    expect(mock.fetch.calls.argsFor(0)[0]).toBe('GET');</div><div class="line">    expect(mock.fetch.calls.argsFor(0)[1]).toBe('/api/list');</div><div class="line">  &#125;);</div><div class="line">&#125;);</div></pre></td></tr></table></figure>
+<h2 id="高阶组件的测试方案"><a href="#高阶组件的测试方案" class="headerlink" title="高阶组件的测试方案"></a>高阶组件的测试方案</h2><p>高阶组件指的是，将作为ui的react组件作为子组件包裹起来，并通过<code>props</code>向其注入数据的react组件。一般高阶组件不涉及ui样式，只负责向子组件注入数据。在react中，常见的高阶组件有，调用<code>react-redux</code>的<code>connect</code>api生成的组件，调用<code>Relay</code>的<code>createContainer</code>api生成的组件。</p>
+<p>高阶组件在实质上还是react组件，所以原则上上述的测试说明都是通用的。但是，测试高阶组件有一些难度。首先是如何获取到子组件的渲染实例和真实dom的问题。事实上，像<code>react-redux</code>和<code>react-relay</code>这样的框架或库，如果没有设计相关的api的话，是很难获取到子组件的。</p>
+<p>在<code>react-redux</code>的<code>connect</code>方法中，如果传入第四个参数<code>{withRef: true}</code>，那么在生成的高阶组件的实例上调用<code>getWrappedInstance</code>方法，会返回子组件的实例。上面已经给出<code>react-redux</code>的<a href="#jasmine VS jest">mock代码</a>。</p>
+<p>但是，<code>react-relay</code>并没有给出类似的api，虽然可以通过一些手段来mock<code>react-relay</code>的api，在其中埋下一些钩子函数用来探查子组件的状态。但是总体来看，测试<code>relay</code>组件的代价是比较高的。</p>
+<h3 id="react-redux组件"><a href="#react-redux组件" class="headerlink" title="react-redux组件"></a>react-redux组件</h3><p>当前使用<code>redux</code>来管理<code>react</code>的系统状态是比较流行的技术解决方案，但<code>redux</code>本身是独立运行的一个单例，需要通过<code>react-redux</code>之类的中间库，将存放在<code>store</code>内部的状态数据引入到react组件的单向数据流中。也就是调用<code>connect</code>api向少数smart组件注入数据，从而形成高阶组件。</p>
+<p>对于这种应用，单元测试的方案有两种。一种是不测试这些高阶组件，采用mock<code>props</code>的方式，直接测试作为子组件的react组件。独立测试<code>redux</code>。另一种是，直接测试高阶组件。两者都是可行的，各有利弊，可酌情考虑。前一种测试方案比较直接明了不具体说明。这里给出第二种测试方案的执行细节。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div></pre></td><td class="code"><pre><div class="line"><span class="comment">// __mocks__/react-redux.js</span></div><div class="line"><span class="comment">// ...</span></div><div class="line"><span class="comment">// 具体代码见上文</span></div><div class="line"><span class="comment">// ...</span></div><div class="line"></div><div class="line"><span class="comment">// src/utils/testHelper.js</span></div><div class="line"><span class="comment">// 是上文中的同一个`testHelper`文件</span></div><div class="line"><span class="keyword">export</span> <span class="function"><span class="keyword">function</span> <span class="title">renderConnectComponent</span>(<span class="params">ReactElement</span>) </span>&#123;</div><div class="line">  <span class="comment">// `renderComponent`方法见上文</span></div><div class="line">  <span class="keyword">let</span> &#123;instance&#125; = renderComponent(ReactElement);</div><div class="line">  instance = instance.refs.main.getWrappedInstance();</div><div class="line">  <span class="keyword">const</span> node = ReactDOM.findDOMNode(instance);</div><div class="line">  <span class="keyword">return</span> &#123;instance, node&#125;;</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="comment">// src/components/Hello.js</span></div><div class="line"><span class="keyword">import</span> React <span class="keyword">from</span> <span class="string">'react'</span>;</div><div class="line"><span class="keyword">import</span> &#123;connect&#125; <span class="keyword">from</span> <span class="string">'react-redux'</span>;</div><div class="line"><span class="class"><span class="keyword">class</span> <span class="title">Hello</span> <span class="keyword">extends</span> <span class="title">React</span>.<span class="title">Component</span> </span>&#123;</div><div class="line">  render() &#123;</div><div class="line">    <span class="keyword">return</span> &lt;div&gt;Hello, &#123;this.props.name&#125;&lt;/div&gt;</div><div class="line">  &#125;</div><div class="line">&#125;</div><div class="line"><span class="keyword">export</span> <span class="keyword">default</span> connect(<span class="function"><span class="params">state</span> =&gt;</span> (&#123;</div><div class="line">  <span class="attr">name</span>: state.user.name</div><div class="line">&#125;))(Hello);</div><div class="line"></div><div class="line"><span class="comment">// src/components/__tests__/Hello.spec.js</span></div><div class="line"><span class="keyword">import</span> React <span class="keyword">from</span> <span class="string">'react'</span>;</div><div class="line"><span class="keyword">import</span> ReactDOM <span class="keyword">from</span> <span class="string">'react-dom'</span>;</div><div class="line"><span class="keyword">import</span> &#123;Provider&#125; <span class="keyword">from</span> <span class="string">'react-redux'</span>;</div><div class="line"><span class="keyword">import</span> &#123;renderConnectComponent&#125; <span class="keyword">from</span> <span class="string">'#/utils/testHelper'</span>;</div><div class="line"><span class="keyword">import</span> store <span class="keyword">from</span> <span class="string">'#/store'</span>;</div><div class="line"><span class="keyword">import</span> Hello <span class="keyword">from</span> <span class="string">'../Hello'</span>;</div><div class="line"></div><div class="line">describe(<span class="string">'Hello'</span>, () =&gt; &#123;</div><div class="line">  <span class="keyword">let</span> hello;</div><div class="line">  beforeEach(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</div><div class="line">    <span class="class"><span class="keyword">class</span> <span class="title">HelloProvider</span> <span class="keyword">extends</span> <span class="title">React</span>.<span class="title">Component</span> </span>&#123;</div><div class="line">      render() &#123;</div><div class="line">        <span class="keyword">return</span> (</div><div class="line">          &lt;Provider store=&#123;store&#125;&gt;</div><div class="line">            &lt;Hello ref="main"/&gt;</div><div class="line">          &lt;/Provider&gt;</div><div class="line">        );</div><div class="line">      &#125;</div><div class="line">    &#125;</div><div class="line">    hello = renderConnectComponent(</div><div class="line">      &lt;HelloProvider /&gt;</div><div class="line">    )</div><div class="line">  &#125;);</div><div class="line">  afterEach(() =&gt; &#123;</div><div class="line">    // 重置store</div><div class="line">    store.dispatch(&#123;type: 'RESET'&#125;);</div><div class="line">  &#125;);</div><div class="line">  it('should....', () =&gt; &#123;</div><div class="line">    // 编写单元测试</div><div class="line">  &#125;);</div><div class="line">&#125;);</div></pre></td></tr></table></figure>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p align=&quot;center&quot;&gt;&lt;br&gt;  &lt;img style=&quot;border-radius: 4px; box-shadow: 1px 2px 4px #aaa;&quot; src=&quot;http://images.dtcj.com/DTCJ/1454055712615/59d88e
+    
+    </summary>
+    
+    
+      <category term="react" scheme="http://tapasfe.github.io/tags/react/"/>
+    
+      <category term="Tech Salon" scheme="http://tapasfe.github.io/tags/Tech-Salon/"/>
+    
+      <category term="test" scheme="http://tapasfe.github.io/tags/test/"/>
+    
+      <category term="react-redux" scheme="http://tapasfe.github.io/tags/react-redux/"/>
+    
+      <category term="karma" scheme="http://tapasfe.github.io/tags/karma/"/>
+    
+      <category term="jest" scheme="http://tapasfe.github.io/tags/jest/"/>
+    
+  </entry>
+  
+</feed>

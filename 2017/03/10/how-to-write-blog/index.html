@@ -1,0 +1,46 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> 如何在本博客发布文章 · TFBoys' Playground</title><meta name="description" content="如何在本博客发布文章 - TapasFE"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="short icon" href="/favicon.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600" type="text/css"></head><body><header><a href="/" class="logo-link"><img src="/favicon.png"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">博客</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">归档</a></li><li class="nav-list-item"><a href="https://github.com/TapasFE" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><section class="container"><div class="post"><article class="post-block"><h1 class="post-title">如何在本博客发布文章</h1><div class="post-meta"><div class="post-time">2017年3月10日</div></div><div class="post-content"><h3 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h3><ol>
+<li>从<a href="https://github.com/TapasFE/tapasfe.github.io" target="_blank" rel="external">TapasFE代码仓库</a>克隆到本地</li>
+<li><p>切换分支到 posts</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">git checkout posts</div></pre></td></tr></table></figure>
+</li>
+<li><p>安装dependencies</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm i</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="本地开发"><a href="#本地开发" class="headerlink" title="本地开发"></a>本地开发</h3><ol>
+<li><p>全局安装Hexo命令行工具</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm i hexo-cli -g</div></pre></td></tr></table></figure>
+</li>
+<li><p>启动本地服务器</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm run dev</div></pre></td></tr></table></figure>
+<p>此时，可在localhost:4000查看博客网站</p>
+</li>
+</ol>
+<h3 id="编写新的博客"><a href="#编写新的博客" class="headerlink" title="编写新的博客"></a>编写新的博客</h3><ol>
+<li><p>创建博客</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm run new <span class="string">'my-blog-title'</span></div></pre></td></tr></table></figure>
+<p>Hexo会自动在<code>/source/_posts/</code>路径下创建名为’my-blog-title.md’的文件，并自动根据发布日期创建<code>/yyyy/mm/dd/my-blog-title/</code>的路由。</p>
+</li>
+<li>编写博客<br>编辑<code>/source/_posts/my-blog-title.md</code>文件，同时browserSync插件会自动把内容更新到浏览器上，便于即时查看修改。</li>
+</ol>
+<h3 id="发布博客"><a href="#发布博客" class="headerlink" title="发布博客"></a>发布博客</h3><ol>
+<li><p>打包静态资源</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm run build</div></pre></td></tr></table></figure>
+<p>静态资源打包后放在<code>/public</code>路径下</p>
+</li>
+<li><p>发布上线</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm run release</div></pre></td></tr></table></figure>
+<p>部署<code>/public</code>路径下的所有文件到远程</p>
+<p><strong><em>另：1、2两步也可以合并为以下命令，依次完成打包和上线</em></strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm run publish</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="删除已发布的博客"><a href="#删除已发布的博客" class="headerlink" title="删除已发布的博客"></a>删除已发布的博客</h3><ol>
+<li>删除本地Markdown文件</li>
+<li><p>清除打包过的带有待删除博客的静态文件</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm run clean</div></pre></td></tr></table></figure>
+</li>
+<li><p>重新打包上线</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">npm run publish</div></pre></td></tr></table></figure></li>
+</ol>
+</div></article></div></section><footer><div class="paginator"><a href="/2017/03/15/How-to-play-with-React/" class="prev">上一篇</a><a href="/2017/03/07/fe-notes/" class="next">下一篇</a></div><div class="copyright"><p>© 2016 - 2017 <a href="http://tapasfe.github.io">TapasFE</a>, <a href="https://hexo.io/">Hexo</a> with <a href="https://github.com/pinggod/hexo-theme-apollo">apollo</a>.</p></div></footer><script src="https://cdn.bootcss.com/mathjax/2.5.3/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script></body></html>
